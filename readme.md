@@ -27,3 +27,5 @@ uvicorn app:app --reload
 
 ## Extension Idea
 Applying similar structured parsing + validation to engineering drawings (PDFs) using OCR + CV + rule-based checks for QA/QC.
+
+Focus: AI agents that convert unstructured inputs → structured decisions → system actions
