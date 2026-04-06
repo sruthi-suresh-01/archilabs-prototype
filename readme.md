@@ -1,31 +1,47 @@
-# ArchiLabs Prototype — NL to Layout Engine
+# AI Workflow Prototypes
 
-This is a small prototype inspired by ArchiLabs' code-first CAD approach.
+This repo contains small AI-native workflow prototypes inspired by startup use cases in operations, voice, and design systems.
 
-## What it does
+## 1. ArchiLabs-style AI CAD Prototype
+- Converts natural language into a structured layout spec
+- Validates constraints
+- Renders a visual rack layout
+- Endpoints:
+  - `/parse`
+  - `/preview`
+  - `/preview-demo`
 
-- Converts natural language → structured layout spec
-- Applies basic constraint validation (cooling zones, redundancy, aisles)
-- Generates a simple layout representation
-- Renders a visual layout preview (SVG)
+## 2. Revion-style Service Workflow Prototype
+- Converts technician/customer service notes into structured service data
+- Extracts:
+  - issue category
+  - priority
+  - vehicle
+  - customer need
+  - recommended action
+  - service tags
+- Endpoints:
+  - `/service-agent`
+  - `/service-demo`
 
-## Example
+## Why this matters
+These prototypes explore a common AI systems pattern:
 
-Input:
-"Design a small data center with 12 racks, 2 cooling zones, N+1 redundancy, and 2 aisles."
+**unstructured input → structured representation → operational action**
 
-Output:
-- Structured JSON spec
-- Validation layer
-- Visual layout preview
+This pattern is useful across:
+- automotive operations
+- logistics voice agents
+- layout/CAD systems
 
-## Demo
+## Tech
+- FastAPI
+- Python
+- OpenAI API
+- Pydantic
+- HTML/SVG demo rendering
 
-Run locally:
+## Run locally
 
+```bash
 uvicorn app:app --reload
-
-## Extension Idea
-Applying similar structured parsing + validation to engineering drawings (PDFs) using OCR + CV + rule-based checks for QA/QC.
-
-Focus: AI agents that convert unstructured inputs → structured decisions → system actions

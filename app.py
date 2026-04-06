@@ -2,18 +2,26 @@ import os
 import json
 import math
 from typing import List, Optional, Literal
-from fastapi.responses import HTMLResponse
+
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from openai import OpenAI
+
+from voice_workflow import process_call
+from revion_workflow import process_service_note
 
 load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-app = FastAPI(title="ArchiLabs Prototype")
+app = FastAPI(title="AI Workflow Prototypes")
 
+
+# =========================
+# ArchiLabs models
+# =========================
 
 class LayoutSpec(BaseModel):
     project_type: Literal["data_center"] = "data_center"
@@ -55,6 +63,35 @@ class ParseResponse(BaseModel):
 class PromptInput(BaseModel):
     user_prompt: str
 
+
+# =========================
+# Voice workflow models
+# =========================
+
+class CallInput(BaseModel):
+    transcript: str
+
+
+# =========================
+# Revion workflow models
+# =========================
+
+class ServiceNoteInput(BaseModel):
+    note: str
+
+
+class ServiceWorkflowResponse(BaseModel):
+    issue_category: str
+    priority: str
+    vehicle: str
+    customer_need: str
+    recommended_action: str
+    service_tags: list[str]
+
+
+# =========================
+# ArchiLabs helper functions
+# =========================
 
 def validate_layout(spec: LayoutSpec) -> ValidationResult:
     issues = []
@@ -186,10 +223,16 @@ def render_layout(spec: LayoutSpec) -> RenderedLayout:
     )
 
 
+# =========================
+# Routes
+# =========================
+
 @app.get("/")
 def home():
-    return {"message": "ArchiLabs prototype is running"}
+    return {"message": "AI workflow prototype server is running"}
 
+
+# -------- ArchiLabs --------
 
 @app.post("/parse", response_model=ParseResponse)
 def parse_prompt(data: PromptInput):
@@ -203,6 +246,7 @@ def parse_prompt(data: PromptInput):
         validation=validation,
         rendered_layout=rendered_layout
     )
+
 
 @app.post("/preview", response_class=HTMLResponse)
 def preview_prompt(data: PromptInput):
@@ -264,6 +308,7 @@ def preview_prompt(data: PromptInput):
     """
     return html
 
+
 @app.get("/preview-demo", response_class=HTMLResponse)
 def preview_demo():
     prompt = "Design a small data center with 12 racks, 2 cooling zones, N+1 redundancy, and 2 aisles."
@@ -278,6 +323,103 @@ def preview_demo():
             <h2>ArchiLabs Demo</h2>
             <p><b>Prompt:</b> {prompt}</p>
             {rendered_layout.svg}
+        </body>
+    </html>
+    """
+    return html
+
+
+# -------- HappyRobot / Voice --------
+
+@app.post("/call-agent")
+def call_agent(data: CallInput):
+    result = process_call(data.transcript)
+
+    log = {
+        "status": "logged",
+        "next_step": result["action"]
+    }
+
+    return {
+        "extracted": result,
+        "system_response": log
+    }
+
+
+# -------- Revion --------
+
+@app.post("/service-agent", response_model=ServiceWorkflowResponse)
+def service_agent(data: ServiceNoteInput):
+    result = process_service_note(data.note)
+    return ServiceWorkflowResponse(**result)
+
+
+@app.get("/service-demo", response_class=HTMLResponse)
+def service_demo():
+    sample_note = "Customer reports brake noise when stopping. Needs car back by tomorrow morning. 2019 Honda Civic."
+    result = process_service_note(sample_note)
+
+    tags_html = "".join(f"<li>{tag}</li>" for tag in result["service_tags"])
+
+    html = f"""
+    <html>
+        <head>
+            <title>Revion Workflow Demo</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    background: #f8fafc;
+                    padding: 24px;
+                    color: #111827;
+                }}
+                .card {{
+                    background: white;
+                    padding: 24px;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+                    max-width: 850px;
+                    margin: auto;
+                }}
+                .label {{
+                    font-weight: bold;
+                }}
+                .section {{
+                    margin-bottom: 18px;
+                }}
+                .note-box {{
+                    background: #eef2ff;
+                    padding: 14px;
+                    border-radius: 8px;
+                }}
+                .result-box {{
+                    background: #f9fafb;
+                    padding: 16px;
+                    border-radius: 8px;
+                    border: 1px solid #e5e7eb;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <h2>Revion Workflow Demo</h2>
+
+                <div class="section">
+                    <div class="label">Input Note</div>
+                    <div class="note-box">{sample_note}</div>
+                </div>
+
+                <div class="section result-box">
+                    <div><span class="label">Issue Category:</span> {result["issue_category"]}</div>
+                    <div><span class="label">Priority:</span> {result["priority"]}</div>
+                    <div><span class="label">Vehicle:</span> {result["vehicle"]}</div>
+                    <div><span class="label">Customer Need:</span> {result["customer_need"]}</div>
+                    <div><span class="label">Recommended Action:</span> {result["recommended_action"]}</div>
+                    <div class="section" style="margin-top: 12px;">
+                        <div class="label">Service Tags</div>
+                        <ul>{tags_html}</ul>
+                    </div>
+                </div>
+            </div>
         </body>
     </html>
     """
