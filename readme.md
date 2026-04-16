@@ -43,5 +43,23 @@ This pattern is useful across:
 
 ## Run locally
 
-```bash
 uvicorn app:app --reload
+
+## Agentic Workflow Demo
+
+This system:
+- Extracts structured data from natural language
+- Simulates real-world actions:
+  - Creates service task
+  - Assigns priority
+  - Logs into system
+
+Demonstrates end-to-end agent workflow:
+Input → Reason → Act
+
+## Agent Framework
+
+Experimented with:
+- LLM-based agent loops
+- Tool calling (function-based execution)
+- Prompt chaining for decision making
